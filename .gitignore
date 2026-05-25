@@ -1,0 +1,14 @@
+# colcon build artifacts
+build/
+install/
+log/
+
+# editor / OS noise
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Claude Code session state (memory/ is kept; conversations are not)
+.claude/conversations/
+.claude/*.jsonl

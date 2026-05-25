@@ -1,0 +1,121 @@
+# ws_mocap_px4_msgs_drivers
+
+ROS 2 colcon workspace bundling the motion-capture → PX4 external-vision drivers
+and message packages so a fresh machine can be set up with a single recursive
+clone and one `colcon build`.
+
+This repository is a thin **meta-repo**: it owns the workspace layout (`src/`,
+`build/`, `install/`, `log/`), a `.gitignore` for build artifacts, and pins each
+package below to a specific commit via git submodules. The actual code lives in
+the individual package repos.
+
+Tested on ROS 2 **Jazzy Jalisco** (Ubuntu 24.04) and **Humble Hawksbill**
+(Ubuntu 22.04).
+
+## Packages
+
+| `src/` path                                                | Branch                | Purpose                                                                                                              |
+| ---------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| [`optitrack4px4`](https://github.com/evannsmc/optitrack4px4)               | `main`                | OptiTrack (NatNet) → ROS 2 → PX4 external-vision bridge.                                                              |
+| [`vicon4px4`](https://github.com/evannsmc/vicon4px4)                       | `master`              | Vicon → ROS 2 → PX4 external-vision bridge (derived from [OPT4SMART/ros2-vicon-receiver](https://github.com/OPT4SMART/ros2-vicon-receiver)). |
+| [`mocap_px4_relays`](https://github.com/evannsmc/mocap_px4_relays)         | `main`                | Mocap-agnostic relay nodes: `visual_odometry_relay` and `full_state_relay`.                                          |
+| [`mocap_msgs`](https://github.com/evannsmc/mocap_msgs)                     | `main`                | `FullState` and related custom messages used by the relays.                                                          |
+| [`px4_msgs`](https://github.com/evannsmc/px4_msgs)                         | `v1.16_minimal_msgs`  | Minimal subset of PX4 uORB ROS message definitions (fork of [PX4/px4_msgs](https://github.com/PX4/px4_msgs)).        |
+| [`resilient_autonomy_msgs`](https://github.com/evannsmc/resilient_autonomy_msgs) | `main`          | Custom messages for resilient-autonomy experiments. Marked `COLCON_IGNORE` by default — see below.                   |
+
+### Dependency graph
+
+```
+optitrack4px4 ─┐
+vicon4px4     ─┼──► mocap_px4_relays ──► mocap_msgs
+               │                     ──► px4_msgs
+               └──► px4_msgs (directly, for VehicleOdometry)
+```
+
+## Setup on a new machine
+
+Assumes you've already installed ROS 2 (Jazzy or Humble) and initialized
+`rosdep`. SSH access to `github.com` is required because submodules use
+`git@github.com:` URLs.
+
+```bash
+# 1. Clone with all submodules at their pinned commits
+git clone --recurse-submodules git@github.com:evannsmc/ws_mocap_px4_msgs_drivers.git
+cd ws_mocap_px4_msgs_drivers
+
+# 2. Source your ROS 2 distro
+source /opt/ros/$ROS_DISTRO/setup.bash
+
+# 3. Install package dependencies
+rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -y
+
+# 4. Build
+colcon build --symlink-install
+
+# 5. Source the overlay
+source install/setup.bash
+```
+
+If you forgot `--recurse-submodules` at clone time:
+
+```bash
+git submodule update --init --recursive
+```
+
+## Running
+
+See each package's own README for full launch options:
+
+```bash
+# OptiTrack → PX4
+ros2 launch optitrack4px4 optitrack4px4.launch.py
+
+# Vicon → PX4
+ros2 launch vicon4px4 vicon4px4.launch.py
+
+# Standalone relays (when you already have a PoseStamped publisher)
+ros2 launch mocap_px4_relays visual_odometry_relay.launch.py
+ros2 launch mocap_px4_relays full_state_relay.launch.py
+```
+
+## Maintaining the meta-repo
+
+**Pull upstream changes for every submodule** (fast-forwards each to the branch
+recorded in `.gitmodules`):
+
+```bash
+git submodule update --remote --merge
+git add src/<package>
+git commit -m "bump <package> to <short-sha>"
+```
+
+**Pin a specific commit** in a submodule:
+
+```bash
+cd src/<package>
+git fetch
+git checkout <sha-or-branch>
+cd ../..
+git add src/<package>
+git commit -m "pin <package> to <short-sha>"
+```
+
+**Edit a submodule's code** — work inside `src/<package>/` exactly as if it
+were a standalone clone (it is). Push the submodule first, then bump the
+pointer in the meta-repo with a second commit.
+
+## Notes
+
+- `src/resilient_autonomy_msgs/COLCON_IGNORE` is intentionally present so
+  `colcon build` skips this package. Delete the file inside the submodule if
+  you want it built.
+- `px4_msgs` is pinned to the custom **`v1.16_minimal_msgs`** branch (a
+  minimal subset of messages matching PX4 v1.16). If you upgrade PX4, you'll
+  likely want to bump this submodule to a matching branch — see
+  [PX4/px4_msgs](https://github.com/PX4/px4_msgs) for the compatibility table.
+- `build/`, `install/`, and `log/` are gitignored — they're regenerated by
+  `colcon`.
+
+## Project page
+
+[evannsmc.com/projects/mocap4px4](https://www.evannsmc.com/projects/mocap4px4)

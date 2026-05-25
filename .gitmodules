@@ -1,0 +1,24 @@
+[submodule "src/mocap_msgs"]
+	path = src/mocap_msgs
+	url = git@github.com:evannsmc/mocap_msgs.git
+	branch = main
+[submodule "src/mocap_px4_relays"]
+	path = src/mocap_px4_relays
+	url = git@github.com:evannsmc/mocap_px4_relays.git
+	branch = main
+[submodule "src/optitrack4px4"]
+	path = src/optitrack4px4
+	url = git@github.com:evannsmc/optitrack4px4.git
+	branch = main
+[submodule "src/px4_msgs"]
+	path = src/px4_msgs
+	url = git@github.com:evannsmc/px4_msgs.git
+	branch = v1.16_minimal_msgs
+[submodule "src/resilient_autonomy_msgs"]
+	path = src/resilient_autonomy_msgs
+	url = git@github.com:evannsmc/resilient_autonomy_msgs.git
+	branch = main
+[submodule "src/vicon4px4"]
+	path = src/vicon4px4
+	url = git@github.com:evannsmc/vicon4px4.git
+	branch = master
